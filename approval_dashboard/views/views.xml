@@ -1,0 +1,104 @@
+<odoo>
+  <data>
+      <record id="approval_request_view_under_processing_kanban" model="ir.ui.view">
+        <field name="name">approval.request.view.kanban</field>
+        <field name="model">approval.request</field>
+        <field name="arch" type="xml">
+            <kanban create="false" class="o_modules_kanban" default_group_by="request_status" default_order="create_date desc"
+            group_create="false" group_edit="false" group_delete="false" sample="1">
+                <field name="request_owner_id"/>
+                <field name="request_status"/>
+                <field name="user_status"/>
+                <field name="name"/>
+                <field name="activity_ids"/>
+                <field name="category_id" readonly="1"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click container">
+                            <div class="o_dropdown_kanban dropdown" t-if="!selection_mode">
+
+                                <a class="dropdown-toggle o-no-caret btn" role="button" data-toggle="dropdown" href="#" aria-label="Dropdown menu" title="Dropdown menu">
+                                    <span class="fa fa-ellipsis-v"/>
+                                </a>
+                                <div class="dropdown-menu" role="menu">
+                                    <a t-if="widget.editable" role="menuitem" type="edit" class="dropdown-item">Edit Request</a>
+                                    <a t-if="widget.deletable" role="menuitem" type="delete" class="dropdown-item">Delete</a>
+                                    <a name="action_approve" type="object" attrs="{'invisible':[('user_status','!=','pending')]}"
+                                        role="menuitem" class="dropdown-item">Approve</a>
+                                    <a name="action_refuse" type="object" attrs="{'invisible':[('user_status','!=','pending')]}"
+                                        role="menuitem" class="dropdown-item">Refuse</a>
+                                    <a name="action_withdraw" type="object" attrs="{'invisible':['|',('request_status','==','new'),('user_status','in',['pending','cancel'])]}"
+                                        role="menuitem" class="dropdown-item">Withdraw</a>
+                                </div>
+                            </div>
+                            <div class="oe_kanban_content">
+                                <t t-if="record.user_status.raw_value == 'pending'">
+                                    <span class="badge badge-pill float-right badge-warning mt4 mr16"><t t-esc="record.user_status.value"/></span>
+                                </t>
+                                <t t-if="record.user_status.raw_value == 'approved'">
+                                    <span class="badge badge-pill float-right badge-success mt4 mr16"><t t-esc="record.user_status.value"/></span>
+                                </t>
+                                <t t-if="record.user_status.raw_value == 'refused'">
+                                    <span class="badge badge-pill float-right badge-danger mt4 mr16"><t t-esc="record.user_status.value"/></span>
+                                </t>
+                                <div>
+                                    <strong class="o_kanban_record_title"><field name="name"/></strong>
+                                </div>
+
+                                <div class="text-muted o_kanban_record_subtitle">
+                                    <field name="category_id"/>
+                                </div>
+
+                                <div class="o_kanban_record_bottom">
+                                    <div class="oe_kanban_bottom_left">
+                                        <field name="activity_ids" widget="kanban_activity"/>
+                                    </div>
+                                    <div class="oe_kanban_bottom_right">
+                                        <field name="request_owner_id" widget="many2one_avatar_user"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+      <record id="view_approval_request_under_processing_tree" model="ir.ui.view">
+            <field name="name">all.under.processing.req.tree</field>
+            <field name="model">approval.request</field>
+            <field name="arch" type="xml">
+                <tree string="All Under Processing Requests">
+                    <field name="name"/>
+                    <field name="request_owner_id"/>
+                    <field name="category_id"/>
+                    <field name="request_status"/>
+                </tree>
+            </field>
+        </record>
+
+      <record id="approval_request_action_to_under_processing_category" model="ir.actions.act_window">
+        <field name="name">Approvals Waiting Your Approve</field>
+        <field name="res_model">approval.request</field>
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="view_id" ref="approval_request_view_under_processing_kanban"/>
+        <field name="domain">[('approver_ids.user_id', '=', uid),('request_status', 'in', ['under_process','pending']),('approver_ids.status','!=','approved')]</field>
+      </record>
+
+      <menuitem
+        id="approvals_approval_menu_under_processing"
+        parent="approvals.approvals_menu_manager"
+        name="Under Processing Approvals"
+        action="approval_request_action_to_under_processing_category"
+        sequence="1"/>
+
+
+      <menuitem
+        id="approvals.approvals_menu_root"
+        name="Approvals"
+        web_icon="approvals,static/description/icon.png"
+        action="approval_request_action_to_under_processing_category"
+        sequence="101"/>
+  </data>
+</odoo>
